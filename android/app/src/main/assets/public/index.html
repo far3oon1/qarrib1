@@ -15,7 +15,9 @@
     <style>
         body { background: #F6F3EC; }
         .landing { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
-        .topbar { display: flex; justify-content: space-between; align-items: center; padding: 24px 0; }
+        .topbar { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 24px 0; }
+        .topbar-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+        .hero-trust { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 24px; color: #4A605E; font-size: 15px; }
         .logo { font-family: Fraunces, Georgia, serif; font-size: 30px; font-weight: 600; color: #0B5F5A; }
         .hero { display: grid; grid-template-columns: 1.1fr .9fr; gap: 40px; align-items: center; padding: 40px 0 56px; }
         .hero h1 { font-size: 56px; line-height: 1.05; color: #14302E; }
@@ -37,6 +39,22 @@
             .hero { grid-template-columns: 1fr; }
             .hero h1 { font-size: 38px; }
             .grid3, .steps { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 640px) {
+            .landing { padding: 0 16px; }
+            .topbar { flex-direction: column; align-items: stretch; gap: 14px; padding: 18px 0; }
+            .logo { text-align: center; font-size: 26px; }
+            .topbar-actions { justify-content: center; gap: 8px; }
+            .topbar-actions .q-btn { flex: 1 1 calc(50% - 8px); min-width: 0; text-align: center; }
+            .hero { padding: 24px 0 36px; }
+            .hero h1 { font-size: clamp(30px, 8.4vw, 38px); }
+            .hero-cta { flex-direction: column; align-items: stretch; }
+            .hero-card { padding: 24px 20px; }
+            .hero-trust { flex-direction: column; gap: 6px; font-size: 14px; }
+            .hero-trust > span:not([data-i18n]) { display: none; }
+        }
+        @media (max-width: 360px) {
+            .topbar-actions .q-btn { flex: 1 1 100%; }
         }
 
         /* Multi-Platform Install Section Styles */
@@ -79,7 +97,7 @@
     <div class="landing">
         <nav class="topbar">
             <div class="logo">Qarrib</div>
-            <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+            <div class="topbar-actions">
                 <a href="#install" class="q-btn q-btn-secondary q-btn-sm" style="text-decoration:none;" data-i18n="navInstall">Install App</a>
                 <button id="langToggle" type="button" class="q-btn q-btn-secondary q-btn-sm">العربية</button>
                 <a href="login-patient.html" class="q-btn q-btn-secondary q-btn-sm" style="text-decoration:none;" data-i18n="signin">Sign in</a>
@@ -95,7 +113,7 @@
                     <a href="register.html?role=patient" class="q-btn" style="text-decoration:none;" data-i18n="req">Request a nurse</a>
                     <a href="register.html?role=nurse" class="q-btn q-btn-secondary" style="text-decoration:none;" data-i18n="join">Join as a nurse</a>
                 </div>
-                <div style="display:flex;gap:16px;margin-top:24px;color:#4A605E;font-size:15px;">
+                <div class="hero-trust">
                     <span data-i18n="t1">Licensed &amp; verified</span><span>·</span><span data-i18n="t2">Live tracking</span><span>·</span><span data-i18n="t3">Secure wallet</span>
                 </div>
             </div>
@@ -189,11 +207,11 @@
                                 </div>
                             </div>
                             <div class="download-actions">
-                                <a href="../dist/Qarrab Healthcare Setup 1.1.0.exe" download class="q-btn download-btn">
+                                <a href="https://github.com/far3oon1/qarrib/releases/download/v1.1.0/Qarrib-Healthcare-Setup-1.1.0.exe" download="Qarrib-Healthcare-Setup-1.1.0.exe" download class="q-btn download-btn">
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                                     <span data-i18n="winDownload">Download Setup (64-bit .exe)</span>
                                 </a>
-                                <a href="../dist/Qarrab Healthcare 1.1.0.exe" download class="q-btn q-btn-secondary download-btn">
+                                <a href="https://github.com/far3oon1/qarrib/releases/download/v1.1.0/Qarrib-Healthcare-Portable-1.1.0.exe" download="Qarrib-Healthcare-Portable-1.1.0.exe" download class="q-btn q-btn-secondary download-btn">
                                     <span data-i18n="winPortable">Portable Edition (No install)</span>
                                 </a>
                             </div>
@@ -225,13 +243,17 @@
                                 </div>
                             </div>
                             <div class="download-actions">
-                                <button type="button" onclick="alert(currentLang==='ar'?'جاري تجهيز حزمة macOS...':'macOS DMG build is being bundled...');" class="q-btn download-btn">
+<a href="https://github.com/far3oon1/qarrib/releases/download/v1.1.0/Qarrib-Healthcare-macOS.dmg" download="Qarrib-Healthcare-macOS.dmg" class="q-btn download-btn">
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                                    <span data-i18n="macDownload">Download Universal (.dmg)</span>
-                                </button>
+<span data-i18n="macDownload">Download for macOS (.dmg)</span>
+                                </a>
+                                <a href="https://github.com/far3oon1/qarrib/releases/download/v1.1.0/Qarrib-Healthcare-macOS.zip" download="Qarrib-Healthcare-macOS.zip" class="q-btn q-btn-secondary download-btn">
+                                    <span data-i18n="macDownloadZip">macOS .zip (available now)</span>
+                                </a>
                             </div>
                             <div class="specs-grid">
                                 <div><span class="spec-label" data-i18n="version">Version:</span> <strong>1.1.0</strong></div>
+                                <div><span class="spec-label" data-i18n="fileSize">Size:</span> <strong>~110 MB</strong></div>
                                 <div><span class="spec-label" data-i18n="architecture">Chip:</span> <strong>Apple Silicon &amp; Intel</strong></div>
                                 <div><span class="spec-label" data-i18n="osReq">OS:</span> <strong>macOS 11.0 Big Sur or later</strong></div>
                                 <div><span class="spec-label" data-i18n="security">Security:</span> <strong>Gatekeeper Ready</strong></div>
@@ -262,13 +284,10 @@
                                 </div>
                             </div>
                             <div class="download-actions">
-                                <button type="button" onclick="alert(currentLang==='ar'?'جاري تجهيز حزمة Linux AppImage...':'Linux AppImage is being bundled...');" class="q-btn download-btn">
+                                <a href="https://github.com/far3oon1/qarrib/releases/download/v1.1.0/Qarrib-Healthcare-Linux-x64.tar.gz" download="Qarrib-Healthcare-Linux-x64.tar.gz" class="q-btn download-btn">
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                                    <span data-i18n="linuxAppImage">Download AppImage (x86_64)</span>
-                                </button>
-                                <button type="button" onclick="alert(currentLang==='ar'?'جاري تجهيز حزمة Debian .deb...':'Linux .deb package is being bundled...');" class="q-btn q-btn-secondary download-btn">
-                                    <span data-i18n="linuxDeb">Debian / Ubuntu (.deb)</span>
-                                </button>
+                                    <span data-i18n="linuxTarGz">Download Linux x64 (.tar.gz)</span>
+                                </a>
                             </div>
                             <div class="specs-grid">
                                 <div><span class="spec-label" data-i18n="version">Version:</span> <strong>1.1.0</strong></div>
@@ -279,7 +298,7 @@
                         <div class="panel-side">
                             <div class="side-card">
                                 <h4 style="margin:0 0 8px;font-size:16px;" data-i18n="quickStart">Terminal Run:</h4>
-                                <code style="display:block;background:#EBF2F0;padding:10px;border-radius:8px;font-size:12px;color:#0B4A46;overflow-x:auto;">chmod +x Qarrib-1.1.0.AppImage<br>./Qarrib-1.1.0.AppImage</code>
+                                <code style="display:block;background:#EBF2F0;padding:10px;border-radius:8px;font-size:12px;color:#0B4A46;overflow-x:auto;">tar -xzf Qarrib-Healthcare-Linux-x64.tar.gz<br>./qarrib-desktop</code>
                             </div>
                         </div>
                     </div>
@@ -297,7 +316,7 @@
                                 </div>
                             </div>
                             <div class="download-actions">
-                                <a href="manifest.webmanifest" class="q-btn download-btn">
+                                <a href="https://github.com/far3oon1/qarrib/releases/download/v1.1.0/Qarrib-Healthcare-1.1.0.apk" download="Qarrib-Healthcare-1.1.0.apk" class="q-btn download-btn">
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                                     <span data-i18n="androidApk">Download Android Package (.apk)</span>
                                 </a>
@@ -307,7 +326,7 @@
                             </div>
                             <div class="specs-grid">
                                 <div><span class="spec-label" data-i18n="version">Version:</span> <strong>1.1.0</strong></div>
-                                <div><span class="spec-label" data-i18n="fileSize">Size:</span> <strong>~18 MB</strong></div>
+                                <div><span class="spec-label" data-i18n="fileSize">Size:</span> <strong>~5.0 MB</strong></div>
                                 <div><span class="spec-label" data-i18n="osReq">Android:</span> <strong>8.0 (Oreo) or later</strong></div>
                                 <div><span class="spec-label" data-i18n="location">GPS:</span> <strong>Live Background Tracking</strong></div>
                             </div>
@@ -347,8 +366,12 @@
                                 </div>
                             </div>
                             <div class="download-actions" style="margin-top:20px;">
-                                <a href="login-patient.html" class="q-btn download-btn">
-                                    <span data-i18n="openSafariNow">Open Qarrib App Now</span>
+<a href="https://github.com/far3oon1/qarrib/releases/download/v1.1.0/Qarrib-Healthcare-1.1.0.ipa" download="Qarrib-Healthcare-1.1.0.ipa" class="q-btn download-btn">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                    <span data-i18n="iosDownloadIpa">Download for iPhone (.ipa)</span>
+                                </a>
+                                <a href="login-patient.html" class="q-btn q-btn-secondary download-btn">
+                                    <span data-i18n="openSafariNow">Open in Safari</span>
                                 </a>
                             </div>
                         </div>
@@ -399,17 +422,17 @@
 
         <footer class="footer">
             <div class="logo" style="margin-bottom:8px;">Qarrib</div>
-            <div id="appVersion">All rights reserved © 2026</div>
-            <div id="appMode" style="font-size:12px;margin-top:4px;"></div>
+            <div id="appVersion">All rights reserved © 2026 — Created by ZIyad Mahmoud</div>
         </footer>
     </div>
     <script>
         window.QARRAB_API_URL = 'https://qarrib1.vercel.app';
-        var ver = (window.desktopAPI && window.desktopAPI.getVersion) ? 'Desktop App' : 'Web App';
-        var modeEl = document.getElementById('appMode');
-        function paintMode(lang) {
-            if (!modeEl) return;
-            modeEl.textContent = (lang === 'ar' ? 'يعمل كـ: ' : 'Running as: ') + (lang === 'ar' ? (ver === 'Desktop App' ? 'تطبيق سطح المكتب' : 'تطبيق الويب') : ver);
+        var versionEl = document.getElementById('appVersion');
+        function paintCredits(lang) {
+            if (!versionEl) return;
+            versionEl.textContent = lang === 'ar'
+                ? 'جميع الحقوق محفوظة © 2026 — من إنشاء ZIyad Mahmoud'
+                : 'All rights reserved © 2026 — Created by ZIyad Mahmoud';
         }
         var currentLang = 'en';
         var AR = {
@@ -442,7 +465,7 @@
             winOfflineDesc: 'يعمل بكفاءة حتى لو كان الاتصال غير مستقر، ويتصل بالسحابة تلقائياً عند عودة الشبكة.',
             macTitle: 'قرّب لسطح المكتب — نظام ماك',
             macDesc: 'أداء فائق متوافق مع معالجات آبل سيليكون (M1/M2/M3/M4) ومعالجات إنتل.',
-            macDownload: 'تحميل حزمة ماك (.dmg)',
+            macDownload: 'تحميل حزمة ماك (.dmg)', macDownloadZip: 'تحميل تطبيق ماك جاهز (.zip)', iosInstallProfile: 'تثبيت فوري للشاشة الرئيسية (.mobileconfig)', iosDownloadIpa: 'تحميل حزمة الآيفون (.ipa)',
             architecture: 'المعالج:', security: 'الأمان:',
             howToInstall: 'طريقة التثبيت:',
             macStep1: 'افتح ملف الـ .dmg بعد تنزيله.',
@@ -450,7 +473,7 @@
             macStep3: 'شغّل التطبيق من Launchpad أو Spotlight.',
             linuxTitle: 'قرّب لسطح المكتب — نظام لينكس',
             linuxDesc: 'حزمة AppImage شاملة وحزمة دبيان لأجهزة العيادات ومحطات العمل التي تعمل بلينكس.',
-            linuxAppImage: 'تحميل AppImage (x86_64)',
+            linuxAppImage: 'تحميل AppImage (x86_64)', linuxTarGz: 'تحميل حزمة لينكس x64 (.tar.gz)',
             linuxDeb: 'حزمة دبيان / أوبونتو (.deb)',
             distros: 'التوزيعات:', quickStart: 'التشغيل عبر التيرمينال:',
             androidTitle: 'تطبيق قرّب للهواتف — أندرويد',
@@ -484,13 +507,13 @@
             document.querySelectorAll('[data-i18n]').forEach(function (el) { var k = el.getAttribute('data-i18n'); if (dict[k] != null) el.textContent = dict[k]; });
             var t = document.getElementById('langToggle');
             if (t) t.textContent = currentLang === 'ar' ? 'English' : 'العربية';
-            paintMode(currentLang);
+            paintCredits(currentLang);
         }
         try {
             var saved = localStorage.getItem('qarrib-language');
             if (saved === 'ar' || saved === 'en') applyLandingLang(saved);
-            else paintMode('en');
-        } catch (e) { paintMode('en'); }
+            else paintCredits('en');
+        } catch (e) { paintCredits('en'); }
         
         // Tab switching and OS detection
         function setupPlatformTabs() {

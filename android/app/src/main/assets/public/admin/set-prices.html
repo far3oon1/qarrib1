@@ -55,31 +55,106 @@
                     </div>
                 </div>
                 <div class="form-group"><label class="form-label">السعر (Q)</label><input type="number" class="form-input" id="priceInput" placeholder="أدخل السعر"></div>
+                <div class="form-group">
+                    <label class="form-label"><input type="checkbox" id="useComponents" onchange="toggleComponentsEditor()" style="vertical-align:middle;"> 🧩 تسعير حسب الإجراءات (مكوّنات)</label>
+                    <div id="componentsEditor" style="display:none;background:#F8FAFC;border:1px solid #e2e8f0;border-radius:12px;padding:12px;">
+                        <label class="form-label" style="font-size:13px;">الإجراء وسعره — الإجمالي للمريض = مجموع ما يختاره فقط</label>
+                        <div id="compRows"></div>
+                        <button type="button" onclick="addCompRow()" style="background:#2563eb;color:white;border:none;border-radius:8px;padding:8px 14px;cursor:pointer;font-size:13px;font-weight:700;margin-top:6px;">+ إضافة مكوّن</button>
+                        <button type="button" id="cancelEditBtn" onclick="cancelEditComponents()" style="display:none;background:#64748b;color:white;border:none;border-radius:8px;padding:8px 14px;cursor:pointer;font-size:13px;font-weight:700;margin-top:6px;">إلغاء التعديل</button>
+                        <div style="font-size:12px;color:#64748b;margin-top:6px;">مثال: حقنة 50، اختبار 70، تركيب كانيولا 50، تعليق محلول 150. السعر 0 يعني مجاني.</div>
+                    </div>
+                </div>
                 <button class="btn-primary" onclick="setPrice()">تعيين السعر</button>
             </div>
         </div>
         <div class="prices-list" id="pricesList"><div class="loading"><div class="spinner"></div></div></div>
     </div>
     <script>window.QARRAB_API_URL = 'https://qarrib1.vercel.app';</script>
-    <script src="../js/api.js?v=6"></script>
+    <script src="../js/api.js?v=11"></script>
     <script src="../js/auth.js?v=8"></script>
     <script>
         if (!requireRole('admin')) redirectToLogin();
         let selectedService = 'injection';
+        let editingServiceId = null;
         document.querySelectorAll('.service-chip').forEach(chip => {
             chip.addEventListener('click', () => {
                 document.querySelectorAll('.service-chip').forEach(c => c.classList.remove('active'));
                 chip.classList.add('active');
                 selectedService = chip.dataset.service;
+                cancelEditComponents();
             });
         });
+        function toggleComponentsEditor() {
+            const on = document.getElementById('useComponents').checked;
+            document.getElementById('componentsEditor').style.display = on ? 'block' : 'none';
+            if (!on) { document.getElementById('compRows').innerHTML = ''; cancelEditComponents(true); }
+        }
+        function addCompRow(nameAr, price) {
+            const row = document.createElement('div');
+            row.style.cssText = 'display:flex;gap:6px;margin-bottom:6px;align-items:center;';
+            row.innerHTML =
+                '<input class="form-input compNameAr" style="flex:2;padding:8px;" placeholder="اسم الإجراء بالعربية">' +
+                '<input class="form-input compPrice" type="number" min="0" style="flex:1;padding:8px;" placeholder="السعر">' +
+                '<button type="button" onclick="this.parentNode.remove()" style="background:#EF4444;color:white;border:none;border-radius:8px;padding:8px 10px;cursor:pointer;">✕</button>';
+            row.querySelector('.compNameAr').value = nameAr || '';
+            row.querySelector('.compPrice').value = (price == null ? '' : price);
+            document.getElementById('compRows').appendChild(row);
+        }
+        function collectComponents() {
+            const out = [];
+            document.querySelectorAll('#compRows .compNameAr').forEach((nameEl) => {
+                const nameAr = nameEl.value.trim();
+                if (!nameAr) return;
+                const price = parseFloat(nameEl.parentNode.querySelector('.compPrice').value);
+                out.push({ nameAr, price: (Number.isFinite(price) ? price : 0) });
+            });
+            return out;
+        }
+        function cancelEditComponents(keepRows) {
+            editingServiceId = null;
+            document.getElementById('cancelEditBtn').style.display = 'none';
+            if (!keepRows) {
+                document.getElementById('useComponents').checked = false;
+                toggleComponentsEditor();
+            }
+        }
+        function editComponents(id, compsJson, basePrice) {
+            let comps = [];
+            try { comps = JSON.parse(decodeURIComponent(compsJson)) || []; } catch (e) {}
+            cancelEditComponents(true);
+            document.getElementById('useComponents').checked = true;
+            document.getElementById('componentsEditor').style.display = 'block';
+            document.getElementById('compRows').innerHTML = '';
+            comps.forEach(c => addCompRow(c.nameAr, Number(c.price) || 0));
+            document.getElementById('priceInput').value = basePrice;
+            editingServiceId = id;
+            document.getElementById('cancelEditBtn').style.display = 'inline-block';
+            document.getElementById('componentsEditor').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
         async function setPrice() {
             const price = document.getElementById('priceInput').value;
             if (!price) { showAlert('أدخل السعر','error'); return; }
+            const base = parseFloat(price);
+            if (!(base > 0)) { showAlert('أدخل سعراً صحيحاً أكبر من صفر', 'error'); return; }
+            const compsOn = document.getElementById('useComponents').checked;
+            if (compsOn) {
+                const comps = collectComponents();
+                if (!comps.length) { showAlert('أضف مكوّناً واحداً على الأقل أو أوقف وضع التسعير حسب الإجراءات', 'error'); return; }
+                const payload = { price: base, components: comps };
+                if (editingServiceId) payload.serviceId = editingServiceId; else payload.serviceType = selectedService;
+                try {
+                    const r = await api.setPrice(payload);
+                    if (r.success) { showAlert('تم التعيين'); loadPrices(); cancelEditComponents(); document.getElementById('priceInput').value = ''; }
+                } catch(e) { showAlert(e.message || 'فشل','error'); }
+                return;
+            }
+            const payload = { price: base };
+            if (editingServiceId) payload.serviceId = editingServiceId; else payload.serviceType = selectedService;
             try {
-                const r = await api.setPrice({ serviceType: selectedService, price: parseFloat(price) });
+                const r = await api.setPrice(payload);
                 if (r.success) { showAlert('تم التعيين'); loadPrices(); document.getElementById('priceInput').value = ''; }
-            } catch(e) { showAlert('فشل','error'); }
+            } catch(e) { showAlert(e.message || 'فشل','error'); }
         }
         async function loadPrices() {
             try {
@@ -92,7 +167,14 @@
                     const serviceName = p.nameAr || p.serviceType || p.name || 'خدمة';
                     const servicePrice = p.basePrice != null ? p.basePrice : (p.price || 0);
                     const needAppr = p.requireApproval !== false;
-                    return '<div class="price-card"><div><div class="price-service">' + serviceName + '</div><div style="font-size:12px;color:' + (needAppr ? '#B45309' : '#059669') + ';">' + (needAppr ? 'يحتاج اعتماد الإدارة قبل ظهوره للممرضين' : 'يظهر للممرضين مباشرة') + '</div></div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><div class="price-value">' + servicePrice + ' ج.م</div><button class="delete-btn" style="background:#B45309;" onclick="toggleApproval(\'' + id + '\',' + needAppr + ')">' + (needAppr ? 'إلغاء الاعتماد' : 'تفعيل الاعتماد') + '</button><button class="delete-btn" style="background:#2563eb;" onclick="editPrice(\'' + id + '\',' + servicePrice + ')">✏️ تعديل</button><button class="delete-btn" onclick="deletePrice(\'' + id + '\')">إيقاف</button></div></div>';
+                    const comps = Array.isArray(p.components) ? p.components : [];
+                    const compsBlock = comps.length
+                        ? '<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px;">' + comps.map(cp => '<span style="background:#ECFDF5;color:#065F46;border-radius:10px;padding:2px 8px;font-size:11px;font-weight:700;">🧩 ' + cp.nameAr + ' ' + (Number(cp.price) || 0) + ' ج.م</span>').join('') + '</div>'
+                        : '';
+                    const compEditBtn = comps.length
+                        ? '<button class="delete-btn" style="background:#0B5F5A;" onclick="editComponents(\'' + id + '\',\'' + encodeURIComponent(JSON.stringify(comps)) + '\',' + servicePrice + ')">🧩 مكوّنات</button>'
+                        : '';
+                    return '<div class="price-card"><div><div class="price-service">' + serviceName + '</div><div style="font-size:12px;color:' + (needAppr ? '#B45309' : '#059669') + ';">' + (needAppr ? 'يحتاج اعتماد الإدارة قبل ظهوره للممرضين' : 'يظهر للممرضين مباشرة') + '</div>' + compsBlock + '</div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><div class="price-value">' + servicePrice + ' ج.م</div>' + compEditBtn + '<button class="delete-btn" style="background:#B45309;" onclick="toggleApproval(\'' + id + '\',' + needAppr + ')">' + (needAppr ? 'إلغاء الاعتماد' : 'تفعيل الاعتماد') + '</button><button class="delete-btn" style="background:#2563eb;" onclick="editPrice(\'' + id + '\',' + servicePrice + ')">✏️ تعديل</button><button class="delete-btn" onclick="deletePrice(\'' + id + '\')">إيقاف</button></div></div>';
                 }).join('');
             } catch(e) {}
         }

@@ -148,6 +148,7 @@
                     <label class="form-label">💰 سعر الخدمة (ثابت من الإدارة)</label>
                     <div style="font-size: 22px; font-weight: 800; color: #059669;" id="fixedPriceBox">اختر الخدمة أولاً</div>
                     <div style="font-size: 13px; color: #166534; margin: 8px 0;" id="basePriceHint">السعر ثابت ومحدد من الإدارة — لا يمكن تغييره أو الإنقاص منه.</div>
+                    <div id="compBox" style="display:none;margin:6px 0;"></div>
                     <label class="form-label" style="margin-top:4px;">⚡ زيادة اختيارية فوق الثابت (لتسريع قبول الممرضين — اختياري)</label>
                     <div style="display:flex;gap:8px;align-items:center;">
                         <input type="number" min="0" value="0" class="form-input" id="priceBoost" placeholder="0" style="flex:1;" oninput="refreshTotal()">
@@ -249,29 +250,82 @@
         // Show the admin-set price under each service card (per service type)
         var SERVICE_KEYS = { injection: 'injection', wound: 'wound_care', elderly: 'elderly_care', iv: 'iv_therapy', other: 'other' };
         var SERVICE_PRICES = {};
-        function currentBasePrice() {
+        function currentService() {
             var key = document.getElementById('serviceType').value;
-            var s = SERVICE_PRICES[SERVICE_KEYS[key]];
+            return SERVICE_PRICES[SERVICE_KEYS[key]] || null;
+        }
+        function currentBasePrice() {
+            var s = currentService();
             return (s && s.basePrice > 0) ? s.basePrice : null;
         }
+        // Itemized components (admin-priced sub-procedures) — null when the
+        // service has none (legacy flat basePrice applies).
+        function currentComponents() {
+            var s = currentService();
+            return (s && Array.isArray(s.components) && s.components.length) ? s.components : null;
+        }
+        function checkedComponentKeys() {
+            var comps = currentComponents() || [];
+            var keys = [];
+            comps.forEach(function(c) {
+                var el = document.getElementById('comp_' + c.key);
+                if (el && el.checked) keys.push(c.key);
+            });
+            return keys;
+        }
+        function checkedComponentSum() {
+            var comps = currentComponents() || [];
+            var sum = 0;
+            comps.forEach(function(c) {
+                var el = document.getElementById('comp_' + c.key);
+                if (el && el.checked) sum += (Number(c.price) || 0);
+            });
+            return sum;
+        }
+        function renderComponents() {
+            var box = document.getElementById('compBox');
+            var comps = currentComponents();
+            if (!comps) { box.style.display = 'none'; box.innerHTML = ''; return; }
+            box.style.display = 'block';
+            box.innerHTML = comps.map(function(c) {
+                var p = Number(c.price) || 0;
+                return '<label style="display:flex;align-items:center;gap:6px;padding:5px 10px;background:white;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;cursor:pointer;">'
+                    + '<input type="checkbox" id="comp_' + c.key + '" data-price="' + p + '" checked onchange="refreshTotal()"> '
+                    + '<span style="font-weight:700;">' + c.nameAr + '</span>'
+                    + '<span style="margin-right:auto;color:#059669;font-weight:800;">' + p + ' ج.م</span></label>';
+            }).join('');
+        }
         function refreshBidHint() {
-            var base = currentBasePrice();
+            var comps = currentComponents();
             var hint = document.getElementById('basePriceHint');
             var box = document.getElementById('fixedPriceBox');
-            if (base != null) {
-                hint.textContent = 'السعر ثابت ومحدد من الإدارة — لا يمكن تغييره أو الإنقاص منه. الزيادة اختيارية فقط.';
-                box.textContent = base + ' ج.م';
+            if (comps) {
+                hint.textContent = 'اختر الإجراءات المطلوبة فقط — الإجمالي = مجموع المختار (+ زيادة اختيارية).';
+                box.textContent = 'حسب الإجراءات المختارة';
+                renderComponents();
             } else {
-                hint.textContent = 'هذه الخدمة بانتظار تسعير الإدارة — سيُحدد السعر قبل فتح طلبك.';
-                box.textContent = 'بانتظار التسعير';
+                var base = currentBasePrice();
+                if (base != null) {
+                    hint.textContent = 'السعر ثابت ومحدد من الإدارة — لا يمكن تغييره أو الإنقاص منه.';
+                    box.textContent = base + ' ج.م';
+                } else {
+                    hint.textContent = 'هذه الخدمة بانتظار تسعير الإدارة — سيُحدد السعر قبل فتح طلبك.';
+                    box.textContent = 'بانتظار التسعير';
+                }
             }
             refreshTotal();
         }
         function refreshTotal() {
-            var base = currentBasePrice();
+            var comps = currentComponents();
             var boost = Math.max(0, Number(document.getElementById('priceBoost').value) || 0);
             var el = document.getElementById('totalPricePreview');
-            el.textContent = (base != null) ? (base + boost) : '—';
+            if (comps) {
+                var sum = checkedComponentSum();
+                el.textContent = (sum > 0) ? (sum + boost) : '—';
+            } else {
+                var base = currentBasePrice();
+                el.textContent = (base != null) ? (base + boost) : '—';
+            }
         }
         function resetBid() {
             document.getElementById('priceBoost').value = 0;
@@ -416,7 +470,16 @@
             // Fixed system price + optional patient boost (never below fixed)
             const base = currentBasePrice();
             const boost = Math.max(0, Number(document.getElementById('priceBoost').value) || 0);
-            if (base == null) {
+            const comps = currentComponents();
+            const compKeys = comps ? checkedComponentKeys() : null;
+            if (comps && !compKeys.length) {
+                showAlert('اختر مكوّناً واحداً على الأقل من قائمة الخدمة', 'error');
+                btn.disabled = false;
+                btn.textContent = 'إرسال الطلب';
+                return;
+            }
+            const fixedBase = comps ? checkedComponentSum() : base;
+            if (fixedBase == null) {
                 showAlert('هذه الخدمة بانتظار تسعير الإدارة — اختر خدمة مسعّرة', 'error');
                 btn.disabled = false;
                 btn.textContent = 'إرسال الطلب';
@@ -428,9 +491,10 @@
                 address: document.getElementById('address').value.trim(),
                 location: userLocation,
                 paymentMethod: payMethod,
-                suggestedPrice: base + boost,
+                suggestedPrice: fixedBase + boost,
                 reference: (document.getElementById('payReference') || {}).value || ''
             };
+            if (comps) orderData.selectedComponents = compKeys;
 
             if (!orderData.address) {
                 showAlert('يرجى إدخال العنوان بالتفصيل حتى يصل إليك الممرض', 'error');

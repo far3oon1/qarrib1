@@ -135,7 +135,12 @@
 
                 if (result.success && result.data.length > 0) {
                     container.innerHTML = result.data.map(function(req) {
-                        var base = (req.basePrice != null) ? req.basePrice : (req.service && req.service.basePrice);
+                        // Itemized orders: the real floor is the sum of the components the
+                        // patient actually selected, not the service's flat basePrice.
+                        var compSum = (Array.isArray(req.selectedComponents) && req.selectedComponents.length)
+                            ? req.selectedComponents.reduce(function(s, c) { return s + (Number(c.price) || 0); }, 0)
+                            : null;
+                        var base = (compSum != null) ? compSum : ((req.basePrice != null) ? req.basePrice : (req.service && req.service.basePrice));
                         var short = req.isShortlisted ? '<div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:10px;padding:8px 10px;font-size:13px;font-weight:700;color:#92400e;margin-bottom:10px;">⭐ تم ترشيحك لهذا الطلب! أرسل سعرك بسرعة قبل الآخرين (يُراجع من الإدارة أولاً)</div>' : '';
                         var myOffer = req.hasMyOffer ? '<div style="font-size:13px;margin-bottom:8px;color:' + (req.myOfferStatus === 'pending_review' ? '#1d4ed8' : (req.myOfferStatus === 'approved' ? '#059669' : '#b45309')) + ';">سعرك: <b>' + req.myOfferPrice + ' ج.م</b> — ' + (req.myOfferStatus === 'pending_review' ? '👀 ظاهر للمريض' : (req.myOfferStatus === 'approved' ? '✅ مقبول' : '🔍 قيد مراجعة الإدارة')) + '</div>' : '';
                         var priceBox = '<div style="font-size:12px;color:#64748b;">سعرك يساوي الثابت أو يزيد عنه (أقل سعر مقبول: ' + (base != null ? base + ' ج.م' : '—') + ')</div>' +
