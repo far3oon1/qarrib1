@@ -349,7 +349,15 @@
                     const s = byName[SERVICE_KEYS[card.dataset.value]];
                     const el = document.createElement('div');
                     el.style.cssText = 'font-size:13px;font-weight:700;color:#059669;margin-top:4px;';
-                    el.textContent = (s && s.basePrice > 0) ? s.basePrice + ' ج.م' : 'بانتظار التسعير';
+                    const comps = s && Array.isArray(s.components) ? s.components : null;
+                    if (comps && comps.length) {
+                        // Itemized service: a flat number here would mislead — show the
+                        // cheapest single procedure as "starting from" instead.
+                        const min = Math.min.apply(null, comps.map(function(c) { return Number(c.price) || 0; }));
+                        el.textContent = 'ابتداءً من ' + min + ' ج.م';
+                    } else {
+                        el.textContent = (s && s.basePrice > 0) ? s.basePrice + ' ج.م' : 'بانتظار التسعير';
+                    }
                     card.appendChild(el);
                 });
                 refreshBidHint();
