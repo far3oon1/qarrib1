@@ -327,7 +327,7 @@ const reviewOrderPayment = asyncHandler(async (req, res) => {
         const serviceDoc = await Service.findById(order.service);
         const { openAndShortlist } = require('../utils/shortlist');
         const gov = (order.location && order.location.governorate) || 'Cairo';
-        const base = serviceDoc && serviceDoc.basePrice != null ? Number(serviceDoc.basePrice) : Number(tx.amount);
+        const base = order.finalPrice != null ? Number(order.finalPrice) : (serviceDoc && serviceDoc.basePrice != null ? Number(serviceDoc.basePrice) : Number(tx.amount));
         await openAndShortlist({ order, serviceDoc, gov, amount: base, actorId: req.user.id, actorNote: 'Assistant approved transfer — request opened' });
       } catch (_) { /* open is best-effort */ }
     }

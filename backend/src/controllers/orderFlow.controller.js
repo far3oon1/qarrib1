@@ -926,7 +926,7 @@ const acceptSuggestedPrice = asyncHandler(async (req, res) => {
   const gov = (order.location && order.location.governorate) || 'Cairo';
   // Shared shortlist (patient bid + fixed base shown to nurses)
   const { openAndShortlist } = require('../utils/shortlist');
-  await openAndShortlist({ order, serviceDoc, gov, amount: Number(serviceDoc.basePrice) || order.finalPrice, actorId: req.user.id, actorNote: `Patient accepted suggested price ${order.finalPrice}` });
+  await openAndShortlist({ order, serviceDoc, gov, amount: order.finalPrice, actorId: req.user.id, actorNote: `Patient accepted suggested price ${order.finalPrice}` });
   const admins = await getAdminIds();
   for (const a of admins) {
     await Notification.create({ recipient: a._id, title: 'المريض قبل السعر المقترح', message: `المريض قبل سعر ${order.finalPrice} ج.م للطلب #${order.orderNumber} — ظهر للممرضين`, type: 'order', data: { orderId: order._id } });
