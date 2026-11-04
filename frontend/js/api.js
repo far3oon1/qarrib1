@@ -446,10 +446,16 @@ API.prototype.getServicePrices = function () {
     return this.request('GET', '/services');
 };
 API.prototype.setPrice = function (data) {
-    return this.request('POST', '/admin/set-price', {
+    const payload = {
+        price: data.price,
+        basePrice: data.basePrice,
         serviceType: data.serviceType,
-        price: data.price
-    });
+        serviceId: data.serviceId,
+        minPrice: data.minPrice,
+        maxPrice: data.maxPrice
+    };
+    if (Array.isArray(data.components)) payload.components = data.components;
+    return this.request('POST', '/admin/set-price', payload);
 };
 API.prototype.deletePrice = function (serviceId) {
     return this.request('DELETE', '/admin/price/' + serviceId);

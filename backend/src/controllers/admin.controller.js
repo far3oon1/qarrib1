@@ -1103,10 +1103,32 @@ const { SERVICE_PRICE_CATALOG } = require('../utils/serviceCatalog');
 
 // POST /admin/set-price - Set the authoritative service price
 const setPrice = asyncHandler(async (req, res) => {
-  const { serviceId, serviceType, minPrice, maxPrice } = req.body;
+  const { serviceId, serviceType, minPrice, maxPrice, components } = req.body;
   const basePrice = Number(req.body.basePrice ?? req.body.price);
   if (!Number.isFinite(basePrice) || basePrice <= 0) {
     throw new ApiError(400, 'Admin service price must be greater than zero');
+  }
+
+  // Optional itemized components: {key?, nameAr, name?, price>=0}. An empty
+  // array clears them (back to flat basePrice pricing).
+  let componentsList;
+  if (components != null) {
+    if (!Array.isArray(components)) {
+      throw new ApiError(400, 'components must be an array');
+    }
+    const seenKeys = new Set();
+    componentsList = components.map((c) => {
+      const nameAr = String((c && c.nameAr) || '').trim();
+      const price = Number(c && c.price);
+      if (!nameAr) throw new ApiError(400, 'Each component needs nameAr');
+      if (!Number.isFinite(price) || price < 0) throw new ApiError(400, `Component "${nameAr}" price must be zero or more`);
+      let key = String((c && c.key) || '').trim();
+      if (!key) key = nameAr.replace(/\s+/g, '_').toLowerCase();
+      if (!/^[a-z0-9_\u0600-\u06FF-]+$/.test(key)) key = `comp_${key.replace(/[^a-z0-9\u0600-\u06FF-]/gi, '_')}`;
+      if (seenKeys.has(key)) throw new ApiError(400, `Duplicate component key: ${key}`);
+      seenKeys.add(key);
+      return { key, nameAr, name: c.name ? String(c.name).trim() : null, price };
+    });
   }
 
   let service;
@@ -1131,6 +1153,7 @@ const setPrice = asyncHandler(async (req, res) => {
 
   service.basePrice = basePrice;
   service.isActive = true;
+  if (componentsList != null) service.components = componentsList;
   if (minPrice != null) service.minPrice = Number(minPrice);
   if (maxPrice != null) service.maxPrice = Number(maxPrice);
   await service.save();

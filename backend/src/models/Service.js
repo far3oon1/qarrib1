@@ -63,7 +63,19 @@ const serviceSchema = new mongoose.Schema({
   estimatedDuration: {
     type: Number,
     default: 30
-  }
+  },
+
+  // Itemized sub-procedures the patient may pick at booking time. The order
+  // total equals the sum of the selected components; when the patient picks
+  // none (or the service has no components) the flat basePrice applies.
+  // Prices here are set by the admin alongside basePrice.
+  components: [{
+    _id: false,
+    key: { type: String, required: true, trim: true },
+    name: { type: String, default: null, trim: true },
+    nameAr: { type: String, required: true, trim: true },
+    price: { type: Number, required: true, min: 0 }
+  }]
 
 }, { timestamps: true });
 

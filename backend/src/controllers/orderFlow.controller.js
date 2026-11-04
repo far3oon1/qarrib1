@@ -35,7 +35,7 @@ const createSimple = asyncHandler(async (req, res) => {
   const {
     service, serviceType, description,
     governorate, city, address, lat, lng, location,
-    preferredDate, preferredTime, paymentMethod, suggestedPrice, reference
+    preferredDate, preferredTime, paymentMethod, suggestedPrice, reference, selectedComponents
   } = req.body;
 
   const gov = governorate || 'Cairo';
@@ -70,7 +70,36 @@ const createSimple = asyncHandler(async (req, res) => {
     assertServiceAllowed(serviceDoc, serviceType || service);
   } catch (e) { if (e.statusCode === 400) throw e; }
 
-  const finalAmount = Number(serviceDoc.basePrice);
+  // Itemized pricing: when the service has priced components and the patient
+  // sent selectedComponents keys, the order total is the sum of the selected
+  // components — recomputed SERVER-SIDE from the admin price list (snapshot).
+  // No keys (or a service without components) → legacy flat basePrice.
+  let componentsSnapshot = [];
+  let finalAmount;
+  if (Array.isArray(selectedComponents) && selectedComponents.length) {
+    const byKey = {};
+    (serviceDoc.components || []).forEach((c) => { if (c && c.key) byKey[c.key] = c; });
+    if (!Object.keys(byKey).length) {
+      throw new ApiError(400, 'هذه الخدمة غير مقسّمة إلى مكوّنات مسعّرة — أرسل الطلب بالسعر الثابت');
+    }
+    const chosen = new Set();
+    for (const raw of selectedComponents) {
+      const key = String(typeof raw === 'object' && raw !== null ? (raw.key || '') : raw).trim();
+      if (!key || chosen.has(key)) continue;
+      const comp = byKey[key];
+      if (!comp) {
+        throw new ApiError(400, `الإدارة لم تُسعّر مكوّن "${key}" لهذه الخدمة — المتاح: ${Object.keys(byKey).join('، ')}`);
+      }
+      chosen.add(key);
+      componentsSnapshot.push({ key: comp.key, name: comp.name || null, nameAr: comp.nameAr, price: Number(comp.price) });
+    }
+    if (!componentsSnapshot.length) {
+      throw new ApiError(400, 'اختر مكوّناً واحداً على الأقل من قائمة الخدمة');
+    }
+    finalAmount = Math.round(componentsSnapshot.reduce((s, c) => s + c.price, 0) * 100) / 100;
+  } else {
+    finalAmount = Number(serviceDoc.basePrice);
+  }
   // Patient-final rule: a priced service the patient accepts (fixed system
   // price + optional boost, paid upfront) opens at once — NO admin accept
   // needed. Only unpriced services wait for admin pricing.
@@ -123,6 +152,7 @@ const createSimple = asyncHandler(async (req, res) => {
     status: openNow ? 'open' : 'under_review',
     finalPrice: holdAmount,
     patientOfferedPrice: holdAmount,
+    selectedComponents: componentsSnapshot,
     amountHeld: 0,
     commission,
     commissionRate: liveRate,

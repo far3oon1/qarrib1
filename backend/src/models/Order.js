@@ -177,6 +177,17 @@ const orderSchema = new mongoose.Schema({
     default: 20
   },
 
+  // Itemized pricing snapshot: the components the patient actually selected
+  // ({ key, nameAr, name, price }). Empty for legacy orders priced with the
+  // flat service basePrice.
+  selectedComponents: [{
+    _id: false,
+    key: { type: String, default: null },
+    name: { type: String, default: null },
+    nameAr: { type: String, required: true },
+    price: { type: Number, required: true, min: 0 }
+  }],
+
   status: {
     type: String,
     enum: [
