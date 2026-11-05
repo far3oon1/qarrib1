@@ -13,6 +13,8 @@ legacy-backend/data/
 !.env.example
 backend/.env
 backend/.env.*
+password DB qarrib.txt
+password*.txt
 
 # Generated / synced Capacitor assets
 android/app/src/main/assets/

@@ -16,6 +16,8 @@ Based on: `WhatsApp Audio 2026-11-01 at 21.23.09.ogg` (transcribed locally with 
 - Price must auto-recalculate based on which components the patient actually selects (e.g. skip the test → pay only for the injection).
 - Example from the memo: "Cannula + IV solution" (200) → Cannula insertion = 50, IV solution hookup = 150. "Injection + test" → Injection = 50, Test = 70.
 
+> ✅ **Done (2026-11-05):** Component line items are implemented end-to-end — services carry a `components` list (admin can edit them in `set-prices.html`), the patient booking page shows each component with its price and recalculates the total live, and the order stores the patient's selected components as a snapshot. Seeded via `backend/src/seeders/serviceComponents.seeder.js` using the memo prices above. Flat-price fallback remains when a service has no components.
+
 ## 2. Service price list (from Photo 1 — `WhatsApp Image 2026-11-01 at 9.19.02 PM.jpeg`)
 
 | Service (AR) | Service (EN) | Price (EGP) |
